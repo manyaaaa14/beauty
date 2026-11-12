@@ -11,15 +11,18 @@ import {
   TrendingUp, 
   ArrowUpRight,
   Sparkles,
-  RotateCcw
+  Trash2,
+  Award
 } from 'lucide-react';
-import { resetToInitialSeed } from '../../firebase/db';
+import { clearAllDemoData } from '../../firebase/db';
 
 export default function AdminDashboard({ 
   bookings = [], 
   services = [], 
   packages = [], 
   offers = [], 
+  experience = [],
+  parlourName = 'GLAMMORA',
   onSelectTab,
   onRefreshData 
 }) {
@@ -38,11 +41,15 @@ export default function AdminDashboard({
 
   const activeOffersCount = offers.filter(o => o.active !== false).length;
 
-  const handleResetData = () => {
-    if (window.confirm('Reset all demo data back to luxury initial state?')) {
-      resetToInitialSeed();
-      onRefreshData();
-      alert('Data reset successfully.');
+  const handleClearDemoData = async () => {
+    if (window.confirm('Remove the built-in sample records? Your own services, packages, offers, and bookings will be kept.')) {
+      try {
+        await clearAllDemoData();
+        await onRefreshData();
+        alert('Demo records have been removed. Your own content is unchanged.');
+      } catch (err) {
+        alert(`Failed to remove demo records: ${err.message}`);
+      }
     }
   };
 
@@ -104,12 +111,12 @@ export default function AdminDashboard({
       iconColor: 'text-gold-deep'
     },
     {
-      title: 'Cancelled / Rejected',
-      value: cancelledBookings.length,
-      sub: 'Inactive records',
-      icon: XCircle,
-      color: 'bg-rose-50 text-rose-900 border border-rose-200',
-      iconColor: 'text-rose-600'
+      title: 'Experience Pillars',
+      value: experience.length,
+      sub: 'Custom standards',
+      icon: Award,
+      color: 'bg-white text-espresso-900 border border-champagne-300',
+      iconColor: 'text-gold-deep'
     }
   ];
 
@@ -124,35 +131,38 @@ export default function AdminDashboard({
             Executive Overview
           </span>
           <h2 className="font-serif text-2xl sm:text-3xl text-white font-normal mt-1">
-            Welcome to L'ÉLIXIR Management Suite
+            Welcome to {parlourName} Management Suite
           </h2>
           <p className="text-champagne-300/80 text-xs sm:text-sm mt-1 max-w-xl">
-            Real-time appointment statuses, suite capacity checks, and client bookings are synchronised.
+            Manage your salon services, packages, discounts, experience pillars, and customer reservations in real-time.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <button
-            onClick={() => onSelectTab('bookings')}
+            onClick={() => onSelectTab('services')}
             className="px-5 py-2.5 rounded-full bg-gold text-espresso-900 hover:brightness-110 font-semibold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-md"
           >
-            Manage Bookings
+            + Add Service
           </button>
           
           <button
-            onClick={() => onSelectTab('services')}
-            className="px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-semibold text-xs uppercase tracking-wider border border-white/20 transition-all cursor-pointer"
+            onClick={() => onSelectTab('packages')}
+            className="px-4 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-semibold text-xs uppercase tracking-wider border border-white/20 transition-all cursor-pointer"
           >
-            Add New Service
+            + Add Package
           </button>
 
+          {/* Clear Demo Data Button */}
           <button
-            onClick={handleResetData}
-            className="p-2.5 rounded-full bg-white/5 hover:bg-white/15 text-champagne-300 hover:text-white transition-colors cursor-pointer"
-            title="Reset to Initial Seed Data"
+            onClick={handleClearDemoData}
+            className="px-4 py-2.5 rounded-full bg-rose-950/60 hover:bg-rose-900 text-rose-300 text-xs uppercase tracking-wider font-semibold border border-rose-500/30 transition-colors cursor-pointer flex items-center gap-1.5"
+            title="Remove all demo data and start clean"
           >
-            <RotateCcw className="w-4 h-4" />
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Remove Demo Data</span>
           </button>
+
         </div>
       </div>
 
@@ -208,56 +218,63 @@ export default function AdminDashboard({
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-espresso-800">
-            <thead className="bg-[#FAF7F2] text-espresso-500 uppercase tracking-wider text-[10px] border-b border-champagne-200">
-              <tr>
-                <th className="px-6 py-3.5">Reference</th>
-                <th className="px-6 py-3.5">Guest</th>
-                <th className="px-6 py-3.5">Treatment</th>
-                <th className="px-6 py-3.5">Date & Slot</th>
-                <th className="px-6 py-3.5">Amount</th>
-                <th className="px-6 py-3.5">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-champagne-200">
-              {bookings.slice(0, 5).map((b) => (
-                <tr key={b.id} className="hover:bg-champagne-50/50 transition-colors">
-                  <td className="px-6 py-4 font-mono font-bold text-espresso-900">
-                    {b.id}
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="font-medium text-espresso-900">{b.customerName}</p>
-                    <p className="text-[11px] text-espresso-400">{b.customerPhone}</p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="font-medium text-espresso-900 line-clamp-1">{b.itemName}</p>
-                    <span className="text-[10px] text-espresso-400 capitalize">{b.itemType}</span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <p className="font-medium">{b.date}</p>
-                    <p className="text-[11px] text-gold-deep">{b.time}</p>
-                  </td>
-                  <td className="px-6 py-4 font-serif font-bold text-sm">
-                    ${Number(b.finalAmount).toFixed(2)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                      b.status === 'Confirmed' ? 'bg-emerald-100 text-emerald-800' :
-                      b.status === 'Completed' ? 'bg-blue-100 text-blue-800' :
-                      b.status === 'Cancelled' ? 'bg-rose-100 text-rose-800' :
-                      'bg-amber-100 text-amber-800'
-                    }`}>
-                      {b.status}
-                    </span>
-                  </td>
+          {bookings.length === 0 ? (
+            <div className="text-center py-12 p-6">
+              <Calendar className="w-8 h-8 text-champagne-400 mx-auto mb-2" />
+              <p className="font-serif text-base text-espresso-800">No appointments recorded yet</p>
+              <p className="text-xs text-espresso-500 mt-1">New reservations made by customers will automatically appear here.</p>
+            </div>
+          ) : (
+            <table className="w-full text-left text-xs text-espresso-800">
+              <thead className="bg-[#FAF7F2] text-espresso-500 uppercase tracking-wider text-[10px] border-b border-champagne-200">
+                <tr>
+                  <th className="px-6 py-3.5">Reference</th>
+                  <th className="px-6 py-3.5">Guest</th>
+                  <th className="px-6 py-3.5">Treatment</th>
+                  <th className="px-6 py-3.5">Date & Slot</th>
+                  <th className="px-6 py-3.5">Amount</th>
+                  <th className="px-6 py-3.5">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-champagne-200">
+                {bookings.slice(0, 5).map((b) => (
+                  <tr key={b.id} className="hover:bg-champagne-50/50 transition-colors">
+                    <td className="px-6 py-4 font-mono font-bold text-espresso-900">
+                      {b.id}
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="font-semibold text-espresso-900">{b.customerName}</p>
+                      <p className="text-[11px] text-espresso-400">{b.customerPhone}</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="font-medium text-espresso-900 line-clamp-1">{b.itemName}</p>
+                      <span className="text-[10px] text-espresso-400 capitalize">{b.itemType}</span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <p className="font-medium">{b.date}</p>
+                      <p className="text-[11px] text-gold-deep">{b.time}</p>
+                    </td>
+                    <td className="px-6 py-4 font-serif font-bold text-sm">
+                      ${Number(b.finalAmount).toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                        b.status === 'Confirmed' ? 'bg-emerald-100 text-emerald-800' :
+                        b.status === 'Completed' ? 'bg-blue-100 text-blue-800' :
+                        b.status === 'Cancelled' ? 'bg-rose-100 text-rose-800' :
+                        'bg-amber-100 text-amber-800'
+                      }`}>
+                        {b.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 
     </div>
   );
 }
-

@@ -6,19 +6,20 @@ import {
   Calendar, 
   Sparkles, 
   Search, 
-  Lock, 
-  Phone, 
   DoorOpen, 
   ChevronRight,
-  ShieldCheck
+  User,
+  LogOut
 } from 'lucide-react';
 
 export default function Navbar({ 
   settings, 
+  currentUser,
+  onLogoutUser,
+  onOpenAuth,
   onOpenBooking, 
   onOpenTrackBooking, 
-  onReplayDoors,
-  onNavigateAdmin 
+  onReplayDoors
 }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -80,11 +81,11 @@ export default function Navbar({
           {/* Brand Logo & Monogram */}
           <a href="#" className="flex items-center gap-3 group">
             <div className="w-10 h-10 rounded-full border border-gold/60 bg-[#231713] flex items-center justify-center shadow-sm group-hover:border-gold transition-colors">
-              <span className="font-serif text-lg text-gold font-light tracking-widest">É</span>
+              <span className="font-serif text-lg text-gold font-light tracking-widest">G</span>
             </div>
             <div className="flex flex-col">
               <span className="font-serif text-xl sm:text-2xl font-bold tracking-wider text-espresso-900 group-hover:text-gold-deep transition-colors">
-                {settings?.parlourName || "L'ÉLIXIR"}
+                {settings?.parlourName || 'GLAMMORA'}
               </span>
               <span className="text-[9px] uppercase tracking-[0.3em] text-espresso-500 font-medium -mt-1">
                 HAUTE BEAUTÉ
@@ -93,7 +94,7 @@ export default function Navbar({
           </a>
 
           {/* Desktop Navigation Links */}
-          <div className="hidden lg:flex items-center gap-7">
+          <div className="hidden lg:flex items-center gap-6">
             {navLinks.map((link) => (
               <button
                 key={link.name}
@@ -107,7 +108,7 @@ export default function Navbar({
           </div>
 
           {/* Action CTAs */}
-          <div className="hidden sm:flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-2.5">
             {/* Track Reservation Button */}
             <button
               onClick={onOpenTrackBooking}
@@ -128,26 +129,45 @@ export default function Navbar({
               <span>Doors</span>
             </button>
 
+            {/* Customer Account Pill or Sign In Button */}
+            {currentUser ? (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-champagne-200/60 border border-gold/30 text-xs">
+                <div className="w-6 h-6 rounded-full bg-espresso-900 text-gold flex items-center justify-center font-serif text-[11px] font-bold">
+                  {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'G'}
+                </div>
+                <span className="font-medium text-espresso-900 truncate max-w-[100px]">
+                  {currentUser.name ? currentUser.name.split(' ')[0] : 'Guest'}
+                </span>
+                <button
+                  onClick={onLogoutUser}
+                  className="p-1 text-espresso-400 hover:text-rose-600 transition-colors"
+                  title="Sign out of account"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={onOpenAuth}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs uppercase tracking-wider font-medium text-espresso-700 hover:bg-champagne-200/60 transition-all"
+              >
+                <User className="w-3.5 h-3.5 text-gold-deep" />
+                <span>Sign In</span>
+              </button>
+            )}
+
             {/* Book Appointment CTA */}
             <button
               onClick={() => onOpenBooking()}
-              className="relative group overflow-hidden px-5 py-2.5 rounded-full bg-gradient-to-r from-[#231713] via-[#3D2B24] to-[#231713] text-[#FAF7F2] text-xs uppercase tracking-[0.2em] font-medium shadow-md hover:shadow-gold-glow transition-all duration-300 cursor-pointer border border-gold/40"
+              className="relative group overflow-hidden px-4 sm:px-5 py-2.5 rounded-full bg-gradient-to-r from-[#231713] via-[#3D2B24] to-[#231713] text-[#FAF7F2] text-xs uppercase tracking-[0.2em] font-medium shadow-md hover:shadow-gold-glow transition-all duration-300 cursor-pointer border border-gold/40"
             >
               <span className="relative z-10 flex items-center gap-2">
                 <Calendar className="w-3.5 h-3.5 text-gold" />
-                Book Appointment
+                Book Now
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-gold/30 via-transparent to-gold/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </button>
 
-            {/* Admin Dashboard Entry */}
-            <button
-              onClick={onNavigateAdmin}
-              className="p-2 rounded-full text-espresso-400 hover:text-espresso-800 hover:bg-champagne-200/50 transition-colors cursor-pointer"
-              title="Salon Staff & Admin Portal"
-            >
-              <Lock className="w-4 h-4" />
-            </button>
           </div>
 
           {/* Mobile Menu Toggle */}
@@ -178,25 +198,46 @@ export default function Navbar({
             exit={{ opacity: 0, height: 0 }}
             className="fixed inset-x-0 top-[60px] z-30 bg-[#FAF7F2] border-b border-champagne-300 shadow-2xl overflow-hidden lg:hidden"
           >
-            <div className="p-6 flex flex-col gap-4">
+            <div className="p-6 flex flex-col gap-3">
+              {/* User greeting in mobile menu */}
+              {currentUser && (
+                <div className="flex items-center justify-between pb-3 border-b border-champagne-300">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-espresso-900 text-gold flex items-center justify-center font-serif text-xs font-bold">
+                      {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'G'}
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-espresso-900">{currentUser.name}</p>
+                      <p className="text-[10px] text-espresso-500">{currentUser.email}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={onLogoutUser}
+                    className="p-1.5 text-xs text-rose-600 bg-rose-50 rounded-lg flex items-center gap-1 font-medium"
+                  >
+                    <LogOut className="w-3.5 h-3.5" /> Logout
+                  </button>
+                </div>
+              )}
+
               {navLinks.map((link) => (
                 <button
                   key={link.name}
                   onClick={() => handleNavClick(link.href)}
-                  className="flex items-center justify-between text-left text-sm uppercase tracking-widest font-medium text-espresso-800 py-2 border-b border-champagne-200/60"
+                  className="flex items-center justify-between text-left text-xs uppercase tracking-widest font-medium text-espresso-800 py-2 border-b border-champagne-200/60"
                 >
                   {link.name}
                   <ChevronRight className="w-4 h-4 text-gold" />
                 </button>
               ))}
 
-              <div className="pt-2 flex flex-col gap-3">
+              <div className="pt-2 flex flex-col gap-2.5">
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);
                     onOpenTrackBooking();
                   }}
-                  className="flex items-center justify-center gap-2 w-full py-3 rounded-full border border-gold/50 text-espresso-800 text-xs uppercase tracking-widest font-medium"
+                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-full border border-gold/50 text-espresso-800 text-xs uppercase tracking-widest font-medium"
                 >
                   <Search className="w-4 h-4 text-gold-deep" />
                   Track Reservation
@@ -207,7 +248,7 @@ export default function Navbar({
                     setMobileMenuOpen(false);
                     onReplayDoors();
                   }}
-                  className="flex items-center justify-center gap-2 w-full py-3 rounded-full border border-champagne-300 text-espresso-700 text-xs uppercase tracking-widest font-medium"
+                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-full border border-champagne-300 text-espresso-700 text-xs uppercase tracking-widest font-medium"
                 >
                   <DoorOpen className="w-4 h-4 text-gold-deep" />
                   Replay Grand Entrance
@@ -218,22 +259,12 @@ export default function Navbar({
                     setMobileMenuOpen(false);
                     onOpenBooking();
                   }}
-                  className="flex items-center justify-center gap-2 w-full py-3.5 rounded-full bg-espresso-900 text-white text-xs uppercase tracking-widest font-medium shadow-lg"
+                  className="flex items-center justify-center gap-2 w-full py-3 rounded-full bg-espresso-900 text-white text-xs uppercase tracking-widest font-medium shadow-lg"
                 >
                   <Calendar className="w-4 h-4 text-gold" />
                   Book Appointment Now
                 </button>
 
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    onNavigateAdmin();
-                  }}
-                  className="flex items-center justify-center gap-1.5 text-xs text-espresso-500 py-2"
-                >
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  Authorized Staff & Admin Login
-                </button>
               </div>
             </div>
           </motion.div>
@@ -242,4 +273,3 @@ export default function Navbar({
     </>
   );
 }
-

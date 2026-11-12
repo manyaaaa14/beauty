@@ -205,17 +205,19 @@ export default function TrackBookingModal({ isOpen, onClose, settings }) {
               )}
 
               {/* Concierge WhatsApp Link */}
-              <a
-                href={`https://wa.me/${(settings?.whatsapp || '18005893549').replace(/\D/g, '')}?text=${encodeURIComponent(
-                  `Hello! Regarding my reservation #${result.id} on ${result.date} at ${result.time}: `
-                )}`}
-                target="_blank"
-                rel="noreferrer"
-                className="w-full py-2.5 rounded-full bg-[#25D366] text-white hover:brightness-105 transition-all text-xs uppercase tracking-wider font-semibold flex items-center justify-center gap-2 shadow-sm"
-              >
-                <MessageCircle className="w-4 h-4 fill-white" />
-                <span>Message Salon Concierge</span>
-              </a>
+              {(settings?.whatsapp || settings?.phone) && (
+                <a
+                  href={`https://wa.me/${(settings.whatsapp || settings.phone).replace(/\D/g, '')}?text=${encodeURIComponent(
+                    `Hello ${settings?.parlourName || 'GLAMMORA'}! Regarding my reservation #${result.id} on ${result.date} at ${result.time}: `
+                  )}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full py-2.5 rounded-full bg-[#25D366] text-white hover:brightness-105 transition-all text-xs uppercase tracking-wider font-semibold flex items-center justify-center gap-2 shadow-sm"
+                >
+                  <MessageCircle className="w-4 h-4 fill-white" />
+                  <span>Message Salon Concierge</span>
+                </a>
+              )}
             </div>
           )}
 
@@ -230,4 +232,3 @@ export default function TrackBookingModal({ isOpen, onClose, settings }) {
     </div>
   );
 }
-

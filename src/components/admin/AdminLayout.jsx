@@ -13,6 +13,7 @@ import {
   ExternalLink, 
   Menu, 
   X,
+  Award,
   Sparkles,
   ShieldAlert
 } from 'lucide-react';
@@ -23,6 +24,7 @@ export default function AdminLayout({
   onLogout, 
   onBackToSite, 
   pendingCount = 0,
+  parlourName = 'GLAMMORA',
   children 
 }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -34,8 +36,9 @@ export default function AdminLayout({
     { id: 'packages', label: 'Packages', icon: Gift },
     { id: 'offers', label: 'Offers & Coupons', icon: Tag },
     { id: 'gallery', label: 'Gallery & Portfolio', icon: ImageIcon },
+    { id: 'experience', label: 'Experience Pillars', icon: Award },
     { id: 'customers', label: 'Customers', icon: Users },
-    { id: 'settings', label: 'Website Settings', icon: Settings },
+    { id: 'settings', label: 'Website Settings & Contact', icon: Settings },
     { id: 'schedule', label: 'Appointment Rules', icon: Clock },
   ];
 
@@ -49,7 +52,7 @@ export default function AdminLayout({
             É
           </div>
           <div>
-            <span className="font-serif text-sm font-semibold text-white tracking-wider">L'ÉLIXIR</span>
+            <span className="font-serif text-sm font-semibold text-white tracking-wider">{parlourName}</span>
             <span className="text-[9px] uppercase tracking-widest text-gold block">Admin Suite</span>
           </div>
         </div>
@@ -80,11 +83,11 @@ export default function AdminLayout({
         <div className="p-6 border-b border-white/10">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full border border-gold/60 bg-[#231713] flex items-center justify-center shadow-gold-glow flex-shrink-0">
-              <span className="font-serif text-lg text-gold font-light">É</span>
+              <span className="font-serif text-lg text-gold font-light">G</span>
             </div>
             <div>
               <h2 className="font-serif text-xl font-bold tracking-wider text-white">
-                L'ÉLIXIR
+                {parlourName}
               </h2>
               <span className="text-[9px] uppercase tracking-[0.25em] text-gold font-medium">
                 Atelier Control Suite
@@ -193,4 +196,3 @@ export default function AdminLayout({
     </div>
   );
 }
-

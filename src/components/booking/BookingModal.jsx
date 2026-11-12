@@ -155,6 +155,7 @@ export default function BookingModal({
 
   const discountAmount = couponValidation?.valid ? couponValidation.discountAmount : 0;
   const finalAmount = Math.max(0, standardAmount - discountAmount);
+  const conciergePhone = (settings?.whatsapp || settings?.phone || '').replace(/\D/g, '');
 
   // Submit Booking
   const handleConfirmReservation = async () => {
@@ -223,7 +224,7 @@ export default function BookingModal({
         <div className="bg-[#231713] text-[#FAF7F2] px-6 py-4 flex items-center justify-between border-b border-gold/30">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-full border border-gold/50 flex items-center justify-center bg-black/30">
-              <span className="font-serif text-xs text-gold">É</span>
+              <span className="font-serif text-xs text-gold">G</span>
             </div>
             <div>
               <h3 className="font-serif text-base text-white tracking-wider">
@@ -778,11 +779,11 @@ export default function BookingModal({
 
                 <div className="flex items-center gap-2 mb-4 pb-4 border-b border-champagne-200">
                   <div className="w-7 h-7 rounded-full bg-espresso-900 text-gold flex items-center justify-center font-serif text-xs">
-                    É
+                    G
                   </div>
                   <div>
                     <h5 className="font-serif text-base font-bold text-espresso-900 leading-tight">
-                      {settings?.parlourName || "L'ÉLIXIR"}
+                      {settings?.parlourName || 'GLAMMORA'}
                     </h5>
                     <span className="text-[10px] uppercase tracking-widest text-espresso-500">Haute Beauté</span>
                   </div>
@@ -836,17 +837,19 @@ export default function BookingModal({
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-                <a
-                  href={`https://wa.me/${(settings?.whatsapp || '18005893549').replace(/\D/g, '')}?text=${encodeURIComponent(
-                    `Hello L'ÉLIXIR Concierge! I have confirmed my booking #${confirmedBooking.id} for ${confirmedBooking.date} at ${confirmedBooking.time}.`
-                  )}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="w-full sm:w-auto px-6 py-3 rounded-full bg-[#25D366] text-white hover:brightness-105 font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm"
-                >
-                  <MessageCircle className="w-4 h-4 fill-white" />
-                  <span>WhatsApp Assistance</span>
-                </a>
+                {conciergePhone && (
+                  <a
+                    href={`https://wa.me/${conciergePhone}?text=${encodeURIComponent(
+                      `Hello ${settings?.parlourName || 'GLAMMORA'} Concierge! I have confirmed my booking #${confirmedBooking.id} for ${confirmedBooking.date} at ${confirmedBooking.time}.`
+                    )}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-full sm:w-auto px-6 py-3 rounded-full bg-[#25D366] text-white hover:brightness-105 font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm"
+                  >
+                    <MessageCircle className="w-4 h-4 fill-white" />
+                    <span>WhatsApp Assistance</span>
+                  </a>
+                )}
 
                 <button
                   type="button"
@@ -876,4 +879,3 @@ export default function BookingModal({
     </div>
   );
 }
-

@@ -4,10 +4,9 @@ service cloud.firestore {
 
     // Helper functions
     function isAdmin() {
-      return request.auth != null && 
+      return request.auth != null &&
         (exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
-         request.auth.token.admin == true ||
-         request.auth.token.email.matches('.*@lelixir-beaute[.]com'));
+         request.auth.token.admin == true);
     }
 
     // Services: Public read for published services, Admin full write
@@ -34,6 +33,11 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /experience/{itemId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Settings & Working Hours: Public read, Admin write
     match /settings/{settingId} {
       allow read: if true;
@@ -55,8 +59,9 @@ service cloud.firestore {
 
     // Admins collection: strictly protected
     match /admins/{adminId} {
-      allow read, write: if isAdmin();
+      allow read: if request.auth != null &&
+        (request.auth.uid == adminId || isAdmin());
+      allow write: if isAdmin();
     }
   }
 }
-

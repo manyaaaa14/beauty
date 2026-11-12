@@ -12,18 +12,15 @@ import {
   orderBy, 
   runTransaction 
 } from 'firebase/firestore';
-import { db, isLiveFirebaseConfigured } from './config';
-import { 
-  INITIAL_SERVICES, 
-  INITIAL_PACKAGES, 
-  INITIAL_OFFERS, 
-  INITIAL_GALLERY, 
-  INITIAL_BEFORE_AFTER,
-  INITIAL_REVIEWS, 
-  INITIAL_SETTINGS, 
-  INITIAL_SCHEDULE_SETTINGS, 
-  INITIAL_BOOKINGS 
-} from './seedData';
+import {
+  createUserWithEmailAndPassword,
+  getIdTokenResult,
+  signInWithEmailAndPassword,
+  signOut,
+  updateProfile
+} from 'firebase/auth';
+import { auth, db, isLiveFirebaseConfigured } from './config';
+import { INITIAL_SETTINGS, INITIAL_SCHEDULE_SETTINGS } from './seedData';
 
 // Local storage storage keys for robust offline/demo fallback
 const STORAGE_KEYS = {
@@ -33,45 +30,310 @@ const STORAGE_KEYS = {
   GALLERY: 'lelixir_gallery',
   BEFORE_AFTER: 'lelixir_before_after',
   REVIEWS: 'lelixir_reviews',
+  EXPERIENCE: 'lelixir_experience',
   SETTINGS: 'lelixir_settings',
   SCHEDULE: 'lelixir_schedule',
   BOOKINGS: 'lelixir_bookings',
+  USERS: 'lelixir_users',
+  CURRENT_USER: 'lelixir_current_user',
   ADMIN_AUTH: 'lelixir_admin_auth'
 };
 
-// Initialize local store with initial seed if empty
+const CLEANUP_VERSION = 'lelixir_data_cleanup_v1';
+const DEFAULT_SETTINGS = { parlourName: 'GLAMMORA' };
+const normalizeSettings = (settings = {}) => {
+  const normalized = {
+    ...settings,
+    parlourName: settings.parlourName === "L'ÉLIXIR"
+      ? 'GLAMMORA'
+      : settings.parlourName || DEFAULT_SETTINGS.parlourName,
+    tagline: settings.tagline || settings.parlourTagline || '',
+    subtitle: settings.subtitle || settings.parlourDescription || '',
+    address: settings.address || settings.parlourAddress || '',
+    email: settings.email || settings.parlourContactEmail || ''
+  };
+
+  Object.entries(LEGACY_DEMO_SETTINGS).forEach(([key, demoValue]) => {
+    if (normalized[key] === demoValue) {
+      normalized[key] = '';
+    }
+  });
+  if (normalized.googleMapsEmbed?.includes('Eiffel%20Tower')) {
+    normalized.googleMapsEmbed = '';
+  }
+
+  return normalized;
+};
+const LEGACY_DEMO_IDS = {
+  services: Array.from({ length: 12 }, (_, index) => `srv-${index + 1}`),
+  packages: Array.from({ length: 4 }, (_, index) => `pkg-${index + 1}`),
+  offers: Array.from({ length: 3 }, (_, index) => `off-${index + 1}`),
+  gallery: Array.from({ length: 6 }, (_, index) => `gal-${index + 1}`),
+  beforeAfter: ['ba-1', 'ba-2'],
+  reviews: Array.from({ length: 4 }, (_, index) => `rev-${index + 1}`),
+  experience: Array.from({ length: 6 }, (_, index) => `exp-${index + 1}`),
+  bookings: ['LX-89104A', 'LX-44129B', 'LX-22081C']
+};
+const LEGACY_DEMO_SETTINGS = {
+  tagline: 'Haute Beauté & Sanctuary of Timeless Elegance',
+  subtitle: 'Step into an oasis where Parisian artistry meets Swiss cellular science. Bespoke beauty rituals tailored exclusively for discerning individuals.',
+  phone: '+1 (800) 589-3549',
+  whatsapp: '+18005893549',
+  email: 'concierge@lelixir-beaute.com',
+  address: '742 Royale Boulevard, Haute District, Suite 400',
+  city: 'Beverly Hills / Paris',
+  openingHours: 'Mon - Sat: 9:00 AM – 8:00 PM | Sun: 10:00 AM – 6:00 PM',
+  instagramUrl: 'https://instagram.com/lelixir.beaute',
+  facebookUrl: 'https://facebook.com/lelixir.beaute',
+  announcement: '✨ Reserve your festive beauty suites early — Complimentary champagne with all VIP Packages.',
+  heroHeadline: 'Where Artistry Meets Pure Luxury',
+  heroSubheadline: 'Experience world-class hair artistry, 24K gold facial rituals, and bespoke bridal transformations in private marble suites.'
+};
+
+const removeSeededLocalRecords = (key, seededRecords) => {
+  const records = JSON.parse(localStorage.getItem(key) || '[]');
+  const demoIds = new Set(seededRecords);
+  localStorage.setItem(key, JSON.stringify(records.filter(record => !demoIds.has(record.id))));
+};
+
+const removeLegacyDemoRecords = () => {
+  if (localStorage.getItem(CLEANUP_VERSION) === 'complete') return;
+
+  const seededCollections = [
+    [STORAGE_KEYS.SERVICES, LEGACY_DEMO_IDS.services],
+    [STORAGE_KEYS.PACKAGES, LEGACY_DEMO_IDS.packages],
+    [STORAGE_KEYS.OFFERS, LEGACY_DEMO_IDS.offers],
+    [STORAGE_KEYS.GALLERY, LEGACY_DEMO_IDS.gallery],
+    [STORAGE_KEYS.BEFORE_AFTER, LEGACY_DEMO_IDS.beforeAfter],
+    [STORAGE_KEYS.REVIEWS, LEGACY_DEMO_IDS.reviews],
+    [STORAGE_KEYS.EXPERIENCE, LEGACY_DEMO_IDS.experience],
+    [STORAGE_KEYS.BOOKINGS, LEGACY_DEMO_IDS.bookings]
+  ];
+
+  seededCollections.forEach(([key, seededRecords]) => {
+    removeSeededLocalRecords(key, seededRecords);
+  });
+
+  const currentSettings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || 'null');
+  if (currentSettings) {
+    const cleanSettings = { ...currentSettings };
+    if (cleanSettings.parlourName === "L'ÉLIXIR") {
+      cleanSettings.parlourName = INITIAL_SETTINGS.parlourName;
+    }
+    Object.entries(LEGACY_DEMO_SETTINGS).forEach(([key, demoValue]) => {
+      if (cleanSettings[key] === demoValue) {
+        cleanSettings[key] = INITIAL_SETTINGS[key] || '';
+      }
+    });
+    if (cleanSettings.googleMapsEmbed?.includes('Eiffel%20Tower')) {
+      cleanSettings.googleMapsEmbed = '';
+    }
+    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(cleanSettings));
+  }
+
+  localStorage.setItem(CLEANUP_VERSION, 'complete');
+};
+
+// Initialize local store
 const initLocalStore = () => {
   if (!localStorage.getItem(STORAGE_KEYS.SERVICES)) {
-    localStorage.setItem(STORAGE_KEYS.SERVICES, JSON.stringify(INITIAL_SERVICES));
+    localStorage.setItem(STORAGE_KEYS.SERVICES, JSON.stringify([]));
   }
   if (!localStorage.getItem(STORAGE_KEYS.PACKAGES)) {
-    localStorage.setItem(STORAGE_KEYS.PACKAGES, JSON.stringify(INITIAL_PACKAGES));
+    localStorage.setItem(STORAGE_KEYS.PACKAGES, JSON.stringify([]));
   }
   if (!localStorage.getItem(STORAGE_KEYS.OFFERS)) {
-    localStorage.setItem(STORAGE_KEYS.OFFERS, JSON.stringify(INITIAL_OFFERS));
+    localStorage.setItem(STORAGE_KEYS.OFFERS, JSON.stringify([]));
   }
   if (!localStorage.getItem(STORAGE_KEYS.GALLERY)) {
-    localStorage.setItem(STORAGE_KEYS.GALLERY, JSON.stringify(INITIAL_GALLERY));
+    localStorage.setItem(STORAGE_KEYS.GALLERY, JSON.stringify([]));
   }
   if (!localStorage.getItem(STORAGE_KEYS.BEFORE_AFTER)) {
-    localStorage.setItem(STORAGE_KEYS.BEFORE_AFTER, JSON.stringify(INITIAL_BEFORE_AFTER));
+    localStorage.setItem(STORAGE_KEYS.BEFORE_AFTER, JSON.stringify([]));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.EXPERIENCE)) {
+    localStorage.setItem(STORAGE_KEYS.EXPERIENCE, JSON.stringify([]));
   }
   if (!localStorage.getItem(STORAGE_KEYS.REVIEWS)) {
-    localStorage.setItem(STORAGE_KEYS.REVIEWS, JSON.stringify(INITIAL_REVIEWS));
+    localStorage.setItem(STORAGE_KEYS.REVIEWS, JSON.stringify([]));
   }
   if (!localStorage.getItem(STORAGE_KEYS.SETTINGS)) {
-    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(INITIAL_SETTINGS));
+    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(DEFAULT_SETTINGS));
   }
   if (!localStorage.getItem(STORAGE_KEYS.SCHEDULE)) {
     localStorage.setItem(STORAGE_KEYS.SCHEDULE, JSON.stringify(INITIAL_SCHEDULE_SETTINGS));
   }
   if (!localStorage.getItem(STORAGE_KEYS.BOOKINGS)) {
-    localStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(INITIAL_BOOKINGS));
+    localStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify([]));
+  }
+
+  removeLegacyDemoRecords();
+
+  const savedSettings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || 'null');
+  if (savedSettings) {
+    const normalizedSettings = normalizeSettings(savedSettings);
+    if (JSON.stringify(savedSettings) !== JSON.stringify(normalizedSettings)) {
+      localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(normalizedSettings));
+    }
   }
 };
 
 // Run initialization
 initLocalStore();
+
+// ==========================================
+// USER AUTHENTICATION API
+// ==========================================
+const getStoredUsers = () => {
+  const raw = localStorage.getItem(STORAGE_KEYS.USERS);
+  return raw ? JSON.parse(raw) : [];
+};
+
+const toPublicUser = ({ password, passwordHash, passwordSalt, ...user }) => user;
+
+const hashPassword = async (password, salt) => {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(password),
+    'PBKDF2',
+    false,
+    ['deriveBits']
+  );
+  const bits = await crypto.subtle.deriveBits({
+    name: 'PBKDF2',
+    salt: Uint8Array.from(salt.match(/.{2}/g), byte => parseInt(byte, 16)),
+    iterations: 120000,
+    hash: 'SHA-256'
+  }, key, 256);
+
+  return Array.from(new Uint8Array(bits), byte => byte.toString(16).padStart(2, '0')).join('');
+};
+
+const createPasswordSalt = () => Array.from(
+  crypto.getRandomValues(new Uint8Array(16)),
+  byte => byte.toString(16).padStart(2, '0')
+).join('');
+
+export const getUsers = () => getStoredUsers().map(toPublicUser);
+
+export const registerUser = async ({ name, email, phone, password }) => {
+  const cleanEmail = email.trim().toLowerCase();
+  if (password.length < 8) {
+    throw new Error('Password must be at least 8 characters long.');
+  }
+
+  if (isLiveFirebaseConfigured) {
+    const { user } = await createUserWithEmailAndPassword(auth, cleanEmail, password);
+    await updateProfile(user, { displayName: name.trim() });
+    const newUser = {
+      id: user.uid,
+      name: name.trim(),
+      email: cleanEmail,
+      phone: phone.trim()
+    };
+    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(newUser));
+    return newUser;
+  }
+
+  const users = getStoredUsers();
+  if (users.some(u => u.email === cleanEmail)) {
+    throw new Error('An account with this email address already exists. Please sign in.');
+  }
+
+  const passwordSalt = createPasswordSalt();
+  const newUser = {
+    id: `usr-${Date.now()}`,
+    name: name.trim(),
+    email: cleanEmail,
+    phone: phone.trim(),
+    passwordSalt,
+    passwordHash: await hashPassword(password, passwordSalt),
+    createdAt: new Date().toISOString()
+  };
+
+  users.push(newUser);
+  localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+  const publicUser = toPublicUser(newUser);
+  localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(publicUser));
+  return publicUser;
+};
+
+export const loginUser = async ({ email, password }) => {
+  const cleanEmail = email.trim().toLowerCase();
+
+  if (isLiveFirebaseConfigured) {
+    try {
+      const { user } = await signInWithEmailAndPassword(auth, cleanEmail, password);
+      const isAdmin = await isAuthorizedAdmin(user);
+      const signedInUser = {
+        id: user.uid,
+        name: user.displayName || cleanEmail.split('@')[0],
+        email: cleanEmail,
+        isAdmin
+      };
+
+      localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(signedInUser));
+      return signedInUser;
+    } catch (error) {
+      if (!['auth/user-not-found', 'auth/invalid-credential', 'auth/wrong-password'].includes(error.code)) {
+        throw error;
+      }
+    }
+  }
+
+  const users = getStoredUsers();
+  
+  const foundIndex = users.findIndex(user => user.email === cleanEmail);
+  const found = users[foundIndex];
+  if (found) {
+    let passwordMatches = false;
+    if (found.passwordHash && found.passwordSalt) {
+      passwordMatches = (await hashPassword(password, found.passwordSalt)) === found.passwordHash;
+    } else if (found.password === password) {
+      const passwordSalt = createPasswordSalt();
+      found.passwordSalt = passwordSalt;
+      found.passwordHash = await hashPassword(password, passwordSalt);
+      delete found.password;
+      users[foundIndex] = found;
+      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+      passwordMatches = true;
+    }
+
+    if (passwordMatches) {
+      const publicUser = toPublicUser(found);
+      localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(publicUser));
+      return publicUser;
+    }
+  }
+
+  throw new Error('Invalid email or password. Please check your credentials.');
+};
+
+export const getCurrentUser = () => {
+  const raw = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+  const user = raw ? JSON.parse(raw) : null;
+  if (user?.isGuest) {
+    localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+    return null;
+  }
+  return user;
+};
+
+export const isAuthorizedAdmin = async (user) => {
+  const [adminRecord, token] = await Promise.all([
+    getDoc(doc(db, 'admins', user.uid)),
+    getIdTokenResult(user)
+  ]);
+  return adminRecord.exists() || token.claims.admin === true;
+};
+
+export const logoutUser = async () => {
+  if (auth.currentUser) {
+    await signOut(auth);
+  }
+  localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+};
+
 
 // ==========================================
 // SERVICES API
@@ -88,7 +350,7 @@ export const getServices = async () => {
     }
   }
   const raw = localStorage.getItem(STORAGE_KEYS.SERVICES);
-  return raw ? JSON.parse(raw) : INITIAL_SERVICES;
+  return raw ? JSON.parse(raw) : [];
 };
 
 export const saveService = async (serviceData) => {
@@ -144,7 +406,7 @@ export const getPackages = async () => {
     }
   }
   const raw = localStorage.getItem(STORAGE_KEYS.PACKAGES);
-  return raw ? JSON.parse(raw) : INITIAL_PACKAGES;
+  return raw ? JSON.parse(raw) : [];
 };
 
 export const savePackage = async (packageData) => {
@@ -200,7 +462,7 @@ export const getOffers = async () => {
     }
   }
   const raw = localStorage.getItem(STORAGE_KEYS.OFFERS);
-  return raw ? JSON.parse(raw) : INITIAL_OFFERS;
+  return raw ? JSON.parse(raw) : [];
 };
 
 export const saveOffer = async (offerData) => {
@@ -246,7 +508,7 @@ export const deleteOffer = async (id) => {
   return true;
 };
 
-// Server-side/backend coupon validation logic
+// Coupon validation
 export const validateCoupon = async (code, amount) => {
   if (!code) return { valid: false, message: 'No coupon code specified' };
   const cleanCode = code.trim().toUpperCase();
@@ -310,12 +572,12 @@ export const getGallery = async () => {
     }
   }
   const raw = localStorage.getItem(STORAGE_KEYS.GALLERY);
-  return raw ? JSON.parse(raw) : INITIAL_GALLERY;
+  return raw ? JSON.parse(raw) : [];
 };
 
 export const getBeforeAfter = async () => {
   const raw = localStorage.getItem(STORAGE_KEYS.BEFORE_AFTER);
-  return raw ? JSON.parse(raw) : INITIAL_BEFORE_AFTER;
+  return raw ? JSON.parse(raw) : [];
 };
 
 export const saveGalleryItem = async (itemData) => {
@@ -357,45 +619,102 @@ export const deleteGalleryItem = async (id) => {
 };
 
 // ==========================================
+// EXPERIENCE / WHY CHOOSE US API
+// ==========================================
+export const getExperience = async () => {
+  if (isLiveFirebaseConfigured) {
+    try {
+      const snap = await getDocs(collection(db, 'experience'));
+      if (!snap.empty) {
+        return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      }
+    } catch (err) {
+      console.warn('Firestore fallback for experience:', err);
+    }
+  }
+  const raw = localStorage.getItem(STORAGE_KEYS.EXPERIENCE);
+  return raw ? JSON.parse(raw) : [];
+};
+
+export const saveExperienceItem = async (itemData) => {
+  const isNew = !itemData.id;
+  const id = isNew ? `exp-${Date.now()}` : itemData.id;
+  const record = { ...itemData, id };
+
+  if (isLiveFirebaseConfigured) {
+    try {
+      await setDoc(doc(db, 'experience', id), record, { merge: true });
+    } catch (err) {
+      console.warn('Firestore saveExperienceItem error:', err);
+    }
+  }
+
+  const items = JSON.parse(localStorage.getItem(STORAGE_KEYS.EXPERIENCE) || '[]');
+  const idx = items.findIndex(e => e.id === id);
+  if (idx >= 0) {
+    items[idx] = record;
+  } else {
+    items.unshift(record);
+  }
+  localStorage.setItem(STORAGE_KEYS.EXPERIENCE, JSON.stringify(items));
+  return record;
+};
+
+export const deleteExperienceItem = async (id) => {
+  if (isLiveFirebaseConfigured) {
+    try {
+      await deleteDoc(doc(db, 'experience', id));
+    } catch (err) {
+      console.warn('Firestore deleteExperienceItem error:', err);
+    }
+  }
+  const items = JSON.parse(localStorage.getItem(STORAGE_KEYS.EXPERIENCE) || '[]');
+  const filtered = items.filter(e => e.id !== id);
+  localStorage.setItem(STORAGE_KEYS.EXPERIENCE, JSON.stringify(filtered));
+  return true;
+};
+
+// ==========================================
 // REVIEWS API
 // ==========================================
 export const getReviews = async () => {
   const raw = localStorage.getItem(STORAGE_KEYS.REVIEWS);
-  return raw ? JSON.parse(raw) : INITIAL_REVIEWS;
+  return raw ? JSON.parse(raw) : [];
 };
 
 // ==========================================
-// SETTINGS API
+// SETTINGS & CONTACT API
 // ==========================================
 export const getSettings = async () => {
   if (isLiveFirebaseConfigured) {
     try {
       const snap = await getDoc(doc(db, 'settings', 'general'));
       if (snap.exists()) {
-        return snap.data();
+        return normalizeSettings(snap.data());
       }
     } catch (err) {
       console.warn('Firestore fallback for settings:', err);
     }
   }
   const raw = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-  return raw ? JSON.parse(raw) : INITIAL_SETTINGS;
+  return normalizeSettings(raw ? JSON.parse(raw) : DEFAULT_SETTINGS);
 };
 
 export const saveSettings = async (settingsData) => {
+  const normalizedSettings = normalizeSettings(settingsData);
   if (isLiveFirebaseConfigured) {
     try {
-      await setDoc(doc(db, 'settings', 'general'), settingsData, { merge: true });
+      await setDoc(doc(db, 'settings', 'general'), normalizedSettings, { merge: true });
     } catch (err) {
       console.warn('Firestore saveSettings error:', err);
     }
   }
-  localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settingsData));
-  return settingsData;
+  localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(normalizedSettings));
+  return normalizedSettings;
 };
 
 // ==========================================
-// APPOINTMENT & SCHEDULE SETTINGS API
+// SCHEDULE SETTINGS API
 // ==========================================
 export const getScheduleSettings = async () => {
   if (isLiveFirebaseConfigured) {
@@ -425,7 +744,7 @@ export const saveScheduleSettings = async (scheduleData) => {
 };
 
 // ==========================================
-// APPOINTMENTS & BOOKINGS API (With Conflict Prevention)
+// APPOINTMENTS & BOOKINGS API
 // ==========================================
 export const getBookings = async () => {
   if (isLiveFirebaseConfigured) {
@@ -439,23 +758,20 @@ export const getBookings = async () => {
     }
   }
   const raw = localStorage.getItem(STORAGE_KEYS.BOOKINGS);
-  return raw ? JSON.parse(raw) : INITIAL_BOOKINGS;
+  return raw ? JSON.parse(raw) : [];
 };
 
-// Find available slots for a given date
 export const getAvailableTimeSlots = async (selectedDate) => {
   const schedule = await getScheduleSettings();
   const bookings = await getBookings();
 
   if (!selectedDate) return [];
 
-  // Check if date is blocked/holiday
   const isDateBlocked = (schedule.blockedDates || []).some(b => b.date === selectedDate);
   if (isDateBlocked) {
     return { available: false, reason: 'The parlour is closed on this date for a scheduled holiday.' };
   }
 
-  // Check day of week
   const dateObj = new Date(selectedDate + 'T00:00:00');
   const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const dayName = daysOfWeek[dateObj.getDay()];
@@ -464,7 +780,6 @@ export const getAvailableTimeSlots = async (selectedDate) => {
     return { available: false, reason: `The parlour is closed on ${dayName}s.` };
   }
 
-  // Generate all possible slots between open and close
   const [openH, openM] = schedule.openTime.split(':').map(Number);
   const [closeH, closeM] = schedule.closeTime.split(':').map(Number);
   const [breakStartH, breakStartM] = (schedule.breakStart || '13:00').split(':').map(Number);
@@ -485,7 +800,6 @@ export const getAvailableTimeSlots = async (selectedDate) => {
   const slots = [];
 
   while (currentMin + interval <= endMin) {
-    // Check if within break time
     const slotOverlapsBreak = (currentMin < breakEndTotal && (currentMin + interval) > breakStartTotal);
 
     if (!slotOverlapsBreak) {
@@ -496,7 +810,6 @@ export const getAvailableTimeSlots = async (selectedDate) => {
       const displayM = m < 10 ? `0${m}` : m;
       const timeStr = `${displayH < 10 ? '0' + displayH : displayH}:${displayM} ${period}`;
 
-      // Check how many bookings already exist for this time slot
       const existingCount = activeBookingsForDate.filter(b => b.time === timeStr).length;
       const isAvailable = existingCount < maxCapacity;
 
@@ -513,11 +826,9 @@ export const getAvailableTimeSlots = async (selectedDate) => {
   return { available: true, slots };
 };
 
-// Create booking with double-booking prevention & atomic confirmation
 export const createBooking = async (bookingPayload) => {
-  const { date, time, customerPhone } = bookingPayload;
+  const { date, time } = bookingPayload;
 
-  // 1. Double-booking check
   const schedule = await getScheduleSettings();
   const currentBookings = await getBookings();
   const maxCapacity = schedule.maxCapacityPerSlot || 2;
@@ -530,7 +841,6 @@ export const createBooking = async (bookingPayload) => {
     throw new Error(`The slot at ${time} on ${date} was just reserved by another guest. Please select another slot.`);
   }
 
-  // Generate unique booking ID: e.g. LX-74918X
   const randomSuffix = Math.floor(10000 + Math.random() * 90000);
   const letterCode = String.fromCharCode(65 + Math.floor(Math.random() * 26));
   const bookingId = `LX-${randomSuffix}${letterCode}`;
@@ -538,11 +848,10 @@ export const createBooking = async (bookingPayload) => {
   const newBooking = {
     ...bookingPayload,
     id: bookingId,
-    status: 'Confirmed', // Default to confirmed luxury reservation
+    status: 'Confirmed',
     createdAt: new Date().toISOString()
   };
 
-  // If live Firestore configured, execute transaction or setDoc
   if (isLiveFirebaseConfigured) {
     try {
       const bookingRef = doc(db, 'bookings', bookingId);
@@ -552,12 +861,10 @@ export const createBooking = async (bookingPayload) => {
     }
   }
 
-  // Persist locally
   const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.BOOKINGS) || '[]');
   list.unshift(newBooking);
   localStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(list));
 
-  // If a coupon code was used, increment offer usage count
   if (bookingPayload.couponCode) {
     try {
       const offers = await getOffers();
@@ -574,7 +881,6 @@ export const createBooking = async (bookingPayload) => {
   return newBooking;
 };
 
-// Lookup booking by ID and Phone number (Confidential & Secure)
 export const lookupBooking = async (bookingId, phone) => {
   if (!bookingId || !phone) {
     return { found: false, message: 'Please provide both Booking Reference and Registered Phone Number.' };
@@ -600,7 +906,6 @@ export const lookupBooking = async (bookingId, phone) => {
   return { found: true, booking: match };
 };
 
-// Update booking status (Admin: Confirm, Reject/Cancel, Complete, Reschedule, Notes)
 export const updateBookingStatus = async (bookingId, updateData) => {
   if (isLiveFirebaseConfigured) {
     try {
@@ -636,17 +941,49 @@ export const deleteBooking = async (bookingId) => {
   return true;
 };
 
-// Reset to initial seed data helper (for admin convenience)
-export const resetToInitialSeed = () => {
-  localStorage.setItem(STORAGE_KEYS.SERVICES, JSON.stringify(INITIAL_SERVICES));
-  localStorage.setItem(STORAGE_KEYS.PACKAGES, JSON.stringify(INITIAL_PACKAGES));
-  localStorage.setItem(STORAGE_KEYS.OFFERS, JSON.stringify(INITIAL_OFFERS));
-  localStorage.setItem(STORAGE_KEYS.GALLERY, JSON.stringify(INITIAL_GALLERY));
-  localStorage.setItem(STORAGE_KEYS.BEFORE_AFTER, JSON.stringify(INITIAL_BEFORE_AFTER));
-  localStorage.setItem(STORAGE_KEYS.REVIEWS, JSON.stringify(INITIAL_REVIEWS));
-  localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(INITIAL_SETTINGS));
-  localStorage.setItem(STORAGE_KEYS.SCHEDULE, JSON.stringify(INITIAL_SCHEDULE_SETTINGS));
-  localStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(INITIAL_BOOKINGS));
+// ==========================================
+// Remove built-in sample records while preserving administrator-created content
+// ==========================================
+export const clearAllDemoData = async () => {
+  const seededCollections = [
+    ['services', LEGACY_DEMO_IDS.services],
+    ['packages', LEGACY_DEMO_IDS.packages],
+    ['offers', LEGACY_DEMO_IDS.offers],
+    ['gallery', LEGACY_DEMO_IDS.gallery],
+    ['experience', LEGACY_DEMO_IDS.experience],
+    ['bookings', LEGACY_DEMO_IDS.bookings]
+  ];
+
+  if (isLiveFirebaseConfigured) {
+    await Promise.all(seededCollections.flatMap(([collectionName, records]) =>
+      records.map(id => deleteDoc(doc(db, collectionName, id)))
+    ));
+  }
+
+  [
+    [STORAGE_KEYS.SERVICES, LEGACY_DEMO_IDS.services],
+    [STORAGE_KEYS.PACKAGES, LEGACY_DEMO_IDS.packages],
+    [STORAGE_KEYS.OFFERS, LEGACY_DEMO_IDS.offers],
+    [STORAGE_KEYS.GALLERY, LEGACY_DEMO_IDS.gallery],
+    [STORAGE_KEYS.BEFORE_AFTER, LEGACY_DEMO_IDS.beforeAfter],
+    [STORAGE_KEYS.REVIEWS, LEGACY_DEMO_IDS.reviews],
+    [STORAGE_KEYS.EXPERIENCE, LEGACY_DEMO_IDS.experience],
+    [STORAGE_KEYS.BOOKINGS, LEGACY_DEMO_IDS.bookings]
+  ].forEach(([key, records]) => removeSeededLocalRecords(key, records));
+
+  const currentSettings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || 'null');
+  if (currentSettings) {
+    const cleanSettings = { ...currentSettings };
+    Object.entries(LEGACY_DEMO_SETTINGS).forEach(([key, demoValue]) => {
+      if (cleanSettings[key] === demoValue) {
+        cleanSettings[key] = INITIAL_SETTINGS[key] || '';
+      }
+    });
+    if (cleanSettings.googleMapsEmbed?.includes('Eiffel%20Tower')) {
+      cleanSettings.googleMapsEmbed = '';
+    }
+    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(cleanSettings));
+  }
+  localStorage.setItem(CLEANUP_VERSION, 'complete');
   return true;
 };
-

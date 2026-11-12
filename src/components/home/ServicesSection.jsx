@@ -44,7 +44,7 @@ export default function ServicesSection({ services = [], onSelectServiceForBooki
           <div className="inline-flex items-center gap-2 mb-3">
             <div className="w-6 h-[1.5px] bg-gold-deep" />
             <span className="text-gold-deep tracking-[0.3em] uppercase text-xs font-semibold">
-              Haute Beauté Rituals
+              Your Beauty, Our Expertise.
             </span>
             <div className="w-6 h-[1.5px] bg-gold-deep" />
           </div>

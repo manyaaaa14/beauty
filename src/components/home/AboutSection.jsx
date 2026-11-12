@@ -4,24 +4,24 @@ import { Sparkles, Users, Award, Shield, CheckCircle2, X } from 'lucide-react';
 
 const EXPERTS = [
   {
-    name: 'Claudette Moreau',
-    role: 'Creative Director & Master Colorist',
-    experience: '16 Years Experience (Paris & Milan)',
-    bio: 'Trained at the prestigious L’Académie de Beauté in Paris. Known for effortless dimensional balayage and couture hair architectural styling.',
+    name: 'Ananya sharma',
+    role: 'Creative Director & Master Hairstylist',
+    experience: '12 Years Experience ',
+    bio: 'Specialist in luxury hair transformations, advanced colouring and modern hairstyling.',
     image: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=600&q=80'
   },
   {
-    name: 'Dr. Valérie Laurent',
-    role: 'Lead Dermal Aesthetician',
-    experience: '14 Years Clinical & Aesthetic Practice',
-    bio: 'Pioneered cellular micro-infusion techniques and bespoke 24K gold regenerative protocols with Swiss peptide compounds.',
+    name:'Meera kapoor',
+    role: 'Lead skin and beauty specialist',
+    experience: '10 Years Experience',
+    bio: 'Expert in advanced skincare treatments, anti-aging therapies, and personalized beauty regimens.',
     image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=80'
   },
   {
-    name: 'Seraphina Rossi',
+    name: 'Priya Desai',
     role: 'High-Fashion Bridal Artist',
     experience: '12 Years Editorial & Celebrity Artistry',
-    bio: 'Master of radiant red carpet complexions and waterproof airbrush bridal transformations for high-profile weddings.',
+    bio: 'Known for elegant bridal makeup, HD makeup and flawless occasion-ready looks.',
     image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80'
   }
 ];
@@ -106,7 +106,7 @@ export default function AboutSection({ settings, onOpenBooking }) {
 
             <p className="text-espresso-600 text-sm sm:text-base leading-relaxed mb-6">
               Founded on the principles of Parisian haute couture and Swiss botanical dermatology, 
-              <strong> {settings?.parlourName || "L'ÉLIXIR"}</strong> was envisioned as a quiet haven away from the hurried world. 
+              <strong> {settings?.parlourName || 'GLAMMORA'}</strong> was envisioned as a quiet haven away from the hurried world.
               Here, every touch is deliberate, every ritual is bespoke, and no detail is overlooked.
             </p>
 
@@ -224,4 +224,3 @@ export default function AboutSection({ settings, onOpenBooking }) {
     </section>
   );
 }
-

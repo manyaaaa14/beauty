@@ -62,3 +62,4 @@ const server = http.createServer((req, res) => {
 server.listen(PORT, HOST, () => {
   console.log(`L'ÉLIXIR Luxury Beauty Parlour server is running on http://${HOST}:${PORT}`);
 });
+

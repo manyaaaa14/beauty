@@ -69,7 +69,7 @@ export default function HeroSection({ settings, onOpenBooking }) {
         >
           <Sparkles className="w-3.5 h-3.5 text-gold animate-pulse" />
           <span className="text-gold tracking-[0.3em] uppercase text-xs font-medium">
-            Private Luxury Suites & Haute Beauté
+            Where Beauty Meets Luxury
           </span>
         </motion.div>
 

@@ -2,8 +2,10 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { MessageCircle } from 'lucide-react';
 
-export default function FloatingWhatsApp({ phone, parlourName = "L'ÉLIXIR" }) {
-  const cleanPhone = (phone || '18005893549').replace(/\D/g, '');
+export default function FloatingWhatsApp({ phone, parlourName = 'GLAMMORA' }) {
+  if (!phone) return null;
+
+  const cleanPhone = phone.replace(/\D/g, '');
   const message = encodeURIComponent(`Bonjour! I would like to inquire about booking an appointment at ${parlourName}.`);
   const whatsappUrl = `https://wa.me/${cleanPhone}?text=${message}`;
 
@@ -34,4 +36,3 @@ export default function FloatingWhatsApp({ phone, parlourName = "L'ÉLIXIR" }) {
     </div>
   );
 }
-

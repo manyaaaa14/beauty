@@ -37,7 +37,7 @@ export default function Footer({ settings, onOpenBooking }) {
     <footer className="bg-[#1A110D] text-[#FAF7F2] border-t border-gold/20 pt-16 pb-12 relative overflow-hidden">
       {/* Background Subtle Luxury Watermark */}
       <div className="absolute right-0 bottom-0 text-[18vw] font-serif font-black text-white/[0.02] pointer-events-none select-none leading-none -mb-8">
-        ÉLIXIR
+        {settings?.parlourName || 'GLAMMORA'}
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -47,10 +47,10 @@ export default function Footer({ settings, onOpenBooking }) {
           <div className="max-w-lg text-center lg:text-left">
             <span className="text-gold tracking-[0.3em] uppercase text-xs font-medium flex items-center justify-center lg:justify-start gap-2">
               <Sparkles className="w-3.5 h-3.5" />
-              L'Élixir VIP Society
+              GLAMMORA VIP Society
             </span>
             <h3 className="font-serif text-2xl sm:text-3xl text-white mt-1">
-              Join Our Haute Beauté Circle
+              Join Our GLAMMORA Circle
             </h3>
             <p className="text-champagne-300/70 text-xs sm:text-sm mt-2">
               Receive private invitations to seasonal beauty galas, preview exclusive treatments, and enjoy member privileges.
@@ -88,10 +88,10 @@ export default function Footer({ settings, onOpenBooking }) {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <div className="w-8 h-8 rounded-full border border-gold/60 flex items-center justify-center bg-black/40">
-                <span className="font-serif text-sm text-gold font-light">É</span>
+                <span className="font-serif text-sm text-gold font-light">G</span>
               </div>
               <span className="font-serif text-2xl tracking-wider text-white">
-                {settings?.parlourName || "L'ÉLIXIR"}
+                {settings?.parlourName || 'GLAMMORA'}
               </span>
             </div>
             <p className="text-champagne-300/70 text-xs leading-relaxed mb-5">
@@ -123,12 +123,10 @@ export default function Footer({ settings, onOpenBooking }) {
               Curated Services
             </h4>
             <ul className="space-y-2 text-xs text-champagne-300/80">
-              <li><a href="#services" className="hover:text-white transition-colors">24K Gold Cellular Facial</a></li>
-              <li><a href="#services" className="hover:text-white transition-colors">Haute Couture Bridal Artistry</a></li>
-              <li><a href="#services" className="hover:text-white transition-colors">Balayage & Bespoke Colour</a></li>
-              <li><a href="#services" className="hover:text-white transition-colors">Caviar & Keratin Scalp Spa</a></li>
-              <li><a href="#services" className="hover:text-white transition-colors">Rose Quartz Velvet Manicure</a></li>
-              <li><a href="#packages" className="hover:text-white transition-colors">VIP Wedding Symphony</a></li>
+              <li><a href="#services" className="hover:text-white transition-colors">Browse Services</a></li>
+              <li><a href="#packages" className="hover:text-white transition-colors">Explore Packages</a></li>
+              <li><a href="#offers" className="hover:text-white transition-colors">Current Offers</a></li>
+              <li><a href="#gallery" className="hover:text-white transition-colors">Gallery</a></li>
             </ul>
           </div>
 
@@ -140,21 +138,8 @@ export default function Footer({ settings, onOpenBooking }) {
             <div className="space-y-2.5 text-xs text-champagne-300/80">
               <div className="flex items-start gap-2">
                 <Clock className="w-4 h-4 text-gold flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-medium text-white">Monday – Saturday</p>
-                  <p>9:00 AM – 8:00 PM</p>
-                </div>
+                <p>{settings?.openingHours || 'Operating hours will be announced soon.'}</p>
               </div>
-              <div className="flex items-start gap-2">
-                <Clock className="w-4 h-4 text-gold/70 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-medium text-white">Sunday & Holidays</p>
-                  <p>10:00 AM – 6:00 PM</p>
-                </div>
-              </div>
-              <p className="text-[11px] text-champagne-400/60 pt-2 italic">
-                *Private late-evening suites available upon advance concierge reservation.
-              </p>
             </div>
           </div>
 
@@ -164,22 +149,24 @@ export default function Footer({ settings, onOpenBooking }) {
               Concierge & Atelier
             </h4>
             <div className="space-y-2.5 text-xs text-champagne-300/80">
-              <div className="flex items-start gap-2">
-                <MapPin className="w-4 h-4 text-gold flex-shrink-0 mt-0.5" />
-                <span>{settings?.address || "742 Royale Boulevard, Haute District, Suite 400"}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-gold flex-shrink-0" />
-                <a href={`tel:${settings?.phone || '+18005893549'}`} className="hover:text-white">
-                  {settings?.phone || "+1 (800) 589-3549"}
-                </a>
-              </div>
-              <div className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-gold flex-shrink-0" />
-                <a href={`mailto:${settings?.email || 'concierge@lelixir-beaute.com'}`} className="hover:text-white">
-                  {settings?.email || "concierge@lelixir-beaute.com"}
-                </a>
-              </div>
+              {settings?.address && (
+                <div className="flex items-start gap-2">
+                  <MapPin className="w-4 h-4 text-gold flex-shrink-0 mt-0.5" />
+                  <span>{settings.address}</span>
+                </div>
+              )}
+              {settings?.phone && (
+                <div className="flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-gold flex-shrink-0" />
+                  <a href={`tel:${settings.phone}`} className="hover:text-white">{settings.phone}</a>
+                </div>
+              )}
+              {settings?.email && (
+                <div className="flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-gold flex-shrink-0" />
+                  <a href={`mailto:${settings.email}`} className="hover:text-white">{settings.email}</a>
+                </div>
+              )}
               <div className="pt-2">
                 <button
                   onClick={() => onOpenBooking()}
@@ -195,7 +182,7 @@ export default function Footer({ settings, onOpenBooking }) {
 
         {/* Bottom Legal & Copyright Bar */}
         <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-champagne-400/60 gap-4">
-          <p>© {new Date().getFullYear()} {settings?.parlourName || "L'ÉLIXIR"} Haute Beauté. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} {settings?.parlourName || 'GLAMMORA'}. All rights reserved.</p>
           
           <div className="flex items-center gap-6">
             <button 
@@ -233,7 +220,7 @@ export default function Footer({ settings, onOpenBooking }) {
             <div className="text-xs text-champagne-300/80 space-y-3 max-h-[60vh] overflow-y-auto pr-2">
               {activeLegalModal === 'privacy' ? (
                 <>
-                  <p>At L'ÉLIXIR, we hold client discretion and personal privacy as fundamental virtues. All customer details gathered during appointment bookings are strictly encrypted.</p>
+                  <p>At {settings?.parlourName || 'GLAMMORA'}, we respect client discretion and personal privacy. Customer details are handled according to our privacy practices.</p>
                   <p>We never sell, rent, or publicly disclose customer names, contact numbers, or treatment records to third parties.</p>
                   <p>Your contact data is strictly used for reservation notifications, appointment reminders, and concierge communication.</p>
                 </>
@@ -258,4 +245,3 @@ export default function Footer({ settings, onOpenBooking }) {
     </footer>
   );
 }
-

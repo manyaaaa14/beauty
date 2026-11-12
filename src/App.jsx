@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
 import { 
+  getCurrentUser,
+  isAuthorizedAdmin,
   getServices, 
   getPackages, 
   getOffers, 
@@ -8,8 +11,11 @@ import {
   getReviews, 
   getSettings, 
   getScheduleSettings, 
-  getBookings 
+  getExperience,
+  getBookings,
+  logoutUser
 } from './firebase/db';
+import { auth, isLiveFirebaseConfigured } from './firebase/config';
 
 // Intro
 import ParlourDoorIntro from './components/intro/ParlourDoorIntro';
@@ -36,7 +42,6 @@ import BookingModal from './components/booking/BookingModal';
 import TrackBookingModal from './components/booking/TrackBookingModal';
 
 // Admin Components
-import AdminLogin from './components/admin/AdminLogin';
 import AdminLayout from './components/admin/AdminLayout';
 import AdminDashboard from './components/admin/AdminDashboard';
 import AdminBookings from './components/admin/AdminBookings';
@@ -47,17 +52,21 @@ import AdminGallery from './components/admin/AdminGallery';
 import AdminCustomers from './components/admin/AdminCustomers';
 import AdminSettings from './components/admin/AdminSettings';
 import AdminSchedule from './components/admin/AdminSchedule';
+import AdminExperience from './components/admin/AdminExperience';
+import UserAuth from './components/auth/UserAuth';
 
 export default function App() {
   // App routing and view state
   const [isAdminView, setIsAdminView] = useState(false);
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => {
-    return localStorage.getItem('lelixir_admin_logged_in') === 'true';
-  });
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
   const [adminTab, setAdminTab] = useState('dashboard');
 
   // 3D Door Intro state
   const [forceDoorIntro, setForceDoorIntro] = useState(false);
+  const [hasSeenDoorIntro, setHasSeenDoorIntro] = useState(
+    () => sessionStorage.getItem('lelixir_door_intro_seen') === 'true'
+  );
 
   // Booking Modal state
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
@@ -73,6 +82,7 @@ export default function App() {
   const [offers, setOffers] = useState([]);
   const [gallery, setGallery] = useState([]);
   const [beforeAfter, setBeforeAfter] = useState([]);
+  const [experience, setExperience] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [settings, setSettings] = useState(null);
   const [scheduleSettings, setScheduleSettings] = useState(null);
@@ -87,6 +97,7 @@ export default function App() {
         offs,
         gals,
         ba,
+        exp,
         revs,
         sett,
         sched,
@@ -97,6 +108,7 @@ export default function App() {
         getOffers(),
         getGallery(),
         getBeforeAfter(),
+        getExperience(),
         getReviews(),
         getSettings(),
         getScheduleSettings(),
@@ -108,6 +120,7 @@ export default function App() {
       setOffers(offs);
       setGallery(gals);
       setBeforeAfter(ba);
+      setExperience(exp);
       setReviews(revs);
       setSettings(sett);
       setScheduleSettings(sched);
@@ -120,6 +133,28 @@ export default function App() {
   useEffect(() => {
     loadAllData();
   }, [loadAllData]);
+
+  useEffect(() => {
+    if (!isLiveFirebaseConfigured) return undefined;
+
+    return onAuthStateChanged(auth, async (user) => {
+      if (!user) return;
+      try {
+        if (await isAuthorizedAdmin(user)) {
+          setCurrentUser({
+            id: user.uid,
+            name: user.displayName || user.email,
+            email: user.email,
+            isAdmin: true
+          });
+          setIsAdminLoggedIn(true);
+          setIsAdminView(true);
+        }
+      } catch (error) {
+        console.error('Failed to verify administrator access:', error);
+      }
+    });
+  }, []);
 
   // Open booking modal helpers
   const handleOpenBooking = (item = null, type = 'service') => {
@@ -145,21 +180,41 @@ export default function App() {
   };
 
   const handleReplayDoors = () => {
+    sessionStorage.removeItem('lelixir_door_intro_seen');
+    setHasSeenDoorIntro(false);
     setForceDoorIntro(true);
   };
 
-  // Admin Auth Handlers
-  const handleAdminLoginSuccess = () => {
-    setIsAdminLoggedIn(true);
+  const handleUserAuthenticated = (user) => {
+    setCurrentUser(user);
+    if (user.isAdmin) {
+      setIsAdminLoggedIn(true);
+      setIsAdminView(true);
+      return;
+    }
+    setForceDoorIntro(true);
   };
 
-  const handleAdminLogout = () => {
-    localStorage.removeItem('lelixir_admin_logged_in');
-    setIsAdminLoggedIn(false);
+  const handleUserLogout = async () => {
+    try {
+      await logoutUser();
+    } catch (error) {
+      console.error('Failed to sign out:', error);
+    } finally {
+      setCurrentUser(null);
+      setIsAdminLoggedIn(false);
+      setIsAdminView(false);
+    }
+  };
+
+  const handleAdminLogout = async () => {
+    await handleUserLogout();
   };
 
   // Pending bookings count for badge
   const pendingCount = bookings.filter(b => b.status === 'Pending').length;
+  const showDoorIntro = !isAdminView && currentUser && !currentUser.isAdmin &&
+    (forceDoorIntro || !hasSeenDoorIntro);
 
   return (
     <div className="relative min-h-screen bg-[#FAF7F2] text-espresso-900 font-sans selection:bg-gold/30 selection:text-espresso-900">
@@ -168,27 +223,27 @@ export default function App() {
       <CustomCursor />
 
       {/* SPECIAL FEATURE: CINEMATIC 3D PARLOUR DOOR INTRO ANIMATION */}
-      <ParlourDoorIntro 
-        forceShow={forceDoorIntro} 
-        onComplete={() => setForceDoorIntro(false)} 
-      />
+      {showDoorIntro && (
+        <ParlourDoorIntro
+          forceShow={forceDoorIntro}
+          onComplete={() => {
+            setForceDoorIntro(false);
+            setHasSeenDoorIntro(true);
+          }}
+        />
+      )}
 
       {/* =========================================================================
           ADMIN DASHBOARD EXPERIENCE
           ========================================================================= */}
-      {isAdminView ? (
-        !isAdminLoggedIn ? (
-          <AdminLogin 
-            onLoginSuccess={handleAdminLoginSuccess} 
-            onBackToSite={() => setIsAdminView(false)} 
-          />
-        ) : (
+      {isAdminView && isAdminLoggedIn ? (
           <AdminLayout
             currentTab={adminTab}
             onSelectTab={setAdminTab}
             onLogout={handleAdminLogout}
             onBackToSite={() => setIsAdminView(false)}
             pendingCount={pendingCount}
+            parlourName={settings?.parlourName || 'GLAMMORA'}
           >
             {adminTab === 'dashboard' && (
               <AdminDashboard
@@ -196,6 +251,8 @@ export default function App() {
                 services={services}
                 packages={packages}
                 offers={offers}
+                experience={experience}
+                parlourName={settings?.parlourName || 'GLAMMORA'}
                 onSelectTab={setAdminTab}
                 onRefreshData={loadAllData}
               />
@@ -236,6 +293,13 @@ export default function App() {
               />
             )}
 
+            {adminTab === 'experience' && (
+              <AdminExperience
+                experience={experience}
+                onRefresh={loadAllData}
+              />
+            )}
+
             {adminTab === 'customers' && (
               <AdminCustomers
                 bookings={bookings}
@@ -256,8 +320,13 @@ export default function App() {
               />
             )}
           </AdminLayout>
-        )
       ) : (
+        !currentUser ? (
+          <UserAuth
+            settings={settings}
+            onAuthenticated={handleUserAuthenticated}
+          />
+        ) : (
         /* =========================================================================
             CUSTOMER SANCTUARY EXPERIENCE
             ========================================================================= */
@@ -265,10 +334,11 @@ export default function App() {
           {/* Header & Sticky Navigation */}
           <Navbar 
             settings={settings}
+            currentUser={currentUser}
+            onLogoutUser={handleUserLogout}
             onOpenBooking={() => handleOpenBooking()}
             onOpenTrackBooking={() => setTrackBookingModalOpen(true)}
             onReplayDoors={handleReplayDoors}
-            onNavigateAdmin={() => setIsAdminView(true)}
           />
 
           {/* Section A: Animated Hero Section */}
@@ -313,7 +383,7 @@ export default function App() {
           />
 
           {/* Section H: Why Choose Us */}
-          <WhyChooseUsSection />
+          <WhyChooseUsSection experience={experience} />
 
           {/* Section I: Contact Section & Google Maps */}
           <ContactSection 
@@ -354,9 +424,9 @@ export default function App() {
             settings={settings}
           />
         </>
+        )
       )}
 
     </div>
   );
 }
-

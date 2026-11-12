@@ -1,27 +1,27 @@
-# L'ÉLIXIR | Haute Beauté & Luxury Parlour Website
+# L'Ã‰LIXIR | Haute BeautÃ© & Luxury Parlour Website
 
 An international, luxury beauty parlour and salon web application with a **Cinematic 3D Parlour Door Opening Animation**, an **editorial haute couture customer experience**, an **end-to-end appointment booking engine with slot conflict prevention**, and a **management admin dashboard**.
 
 ---
 
-## 🌟 Key Highlights & Design Direction
+## ðŸŒŸ Key Highlights & Design Direction
 
 - **Brand Aesthetic**: High-fashion Parisian & Swiss luxury aesthetic with champagne beige (`#F5EFEB`), warm ivory (`#FAF7F2`), rose gold accents (`#B76E79`), and deep espresso brown (`#231713`).
 - **Typography**: Editorial headings in *Playfair Display* & *Cormorant Garamond*; clean, modern UI body in *Plus Jakarta Sans* & *Poppins*.
 - **Special Feature: 3D Grand Parlour Door Entrance**:
   - Closed double doors with French moulding, gold handles, and warm interior glow.
   - Realistic 3D perspective transforms (`rotateY(-105deg)` and `rotateY(105deg)`).
-  - Volumetric center light leak, letter-by-letter brand identity reveal (`L'ÉLIXIR`), camera push-in transition, skip option, and session memory (with a replay button on the navbar).
+  - Volumetric center light leak, letter-by-letter brand identity reveal (`L'Ã‰LIXIR`), camera push-in transition, skip option, and session memory (with a replay button on the navbar).
 - **Custom Desktop Cursor**: Trailing gold precision ring & dot that smoothly morphs upon hovering over interactive elements.
 - **Floating WhatsApp Concierge**: Instant direct WhatsApp concierge chat with pulsing glow and pre-filled inquiry message.
 
 ---
 
-## 🏛️ Customer Website Experience
+## ðŸ›ï¸ Customer Website Experience
 
 1. **Top Announcement Bar**: Privilege club announcements with instant action link.
 2. **Sticky Luxury Navbar**:
-   - Monogram logo (`É`) and typography.
+   - Monogram logo (`Ã‰`) and typography.
    - Smooth navigation links (`Services`, `Packages`, `Offers`, `Gallery`, `Experience`, `Reviews`, `Contact`).
    - "Track Reservation" button with confidential Booking ID lookup.
    - "Doors" replay button to re-trigger the 3D Grand Entrance.
@@ -29,14 +29,14 @@ An international, luxury beauty parlour and salon web application with a **Cinem
    - Mobile responsive menu drawer.
 3. **Animated Hero Section**:
    - High-definition salon background with cinematic zoom.
-   - Animated text reveals, floating luxury badges (Haute Beauté 2025, 4.98/5.0 VIP Rating).
+   - Animated text reveals, floating luxury badges (Haute BeautÃ© 2025, 4.98/5.0 VIP Rating).
    - Dual CTAs: *Book Appointment* and *Explore Services*.
    - Animated counters (15k+ Guests, 12+ Master Aestheticians, 99.4% Satisfaction, 8 Private Suites).
    - Interactive scroll indicator.
 4. **About the Parlour & Atelier Philosophy**:
    - Editorial split imagery layout with gold seal badge.
    - Brand story grounded in Parisian haute couture and Swiss botanical science.
-   - Interactive "Meet Our Experts" modal with master stylists (Claudette Moreau, Dr. Valérie Laurent, Seraphina Rossi).
+   - Interactive "Meet Our Experts" modal with master stylists (Claudette Moreau, Dr. ValÃ©rie Laurent, Seraphina Rossi).
 5. **Our Signature Services (Dynamically Loaded)**:
    - 12+ luxury treatments:
      - Haute Haircut & Bespoke Styling
@@ -80,7 +80,7 @@ An international, luxury beauty parlour and salon web application with a **Cinem
 
 ---
 
-## 📅 Multi-Step Appointment Booking System
+## ðŸ“… Multi-Step Appointment Booking System
 
 - **Step 1: Treatment Selection**:
   - Toggle between Bespoke Services and VIP Packages.
@@ -105,7 +105,7 @@ An international, luxury beauty parlour and salon web application with a **Cinem
   - Displays a printable VIP Pass card with booking details.
   - One-click WhatsApp concierge confirmation link.
 
-### 🔍 Confidential Reservation Tracking
+### ðŸ” Confidential Reservation Tracking
 - Accessible from the top navbar ("Track").
 - Requires both **Booking ID** and **Registered Mobile Phone Number** (prevents public data exposure).
 - Displays live status: `Pending`, `Confirmed`, `Completed`, or `Cancelled`.
@@ -113,20 +113,19 @@ An international, luxury beauty parlour and salon web application with a **Cinem
 
 ---
 
-## 🛡️ Admin Dashboard & Control Suite
+## ðŸ›¡ï¸ Admin Dashboard & Control Suite
 
-Accessible by clicking the **Lock icon** in the navbar or navigating to Admin mode.
+Customers and administrators use the same sign-in form. The account role determines whether sign-in opens the customer website or the admin dashboard.
 
 - **Admin Authentication**:
-  - Secure email/password login.
-  - Protected views: only authorized administrators have access.
-  - Pre-filled master credentials for instant testing:
-    - **Email**: `admin@lelixir-beaute.com`
-    - **Password**: `LuxeParlour2025!`
+  - Firebase email/password sign-in; no administrator email or password is included in client code or shown on screen.
+  - Access requires either a custom `admin: true` Firebase Auth claim or an `admins/{uid}` Firestore document.
+  - Create the user in Firebase Authentication, then create an `admins` Firestore document whose document ID is that user's Firebase UID.
+  - An authorized administrator signing in through the shared form is directed to the admin dashboard.
 - **Overview Dashboard**:
   - 8 real-time KPI stat cards: Total Bookings, Today's Appointments, Pending Approvals, Confirmed Reservations, Total Revenue Value, Active Services, Active Offers, Cancelled/Rejected.
   - Recent appointments preview table with instant status indicators.
-  - "Reset Demo Data" helper button.
+  - Sample records are removed automatically from browser storage; the dashboard can remove remaining built-in sample records.
 - **A. Booking Management**:
   - Search by guest name, reference ID, or phone number.
   - Filter by status (`All`, `Pending`, `Confirmed`, `Completed`, `Cancelled`) and date.
@@ -160,7 +159,7 @@ Accessible by clicking the **Lock icon** in the navbar or navigating to Admin mo
   - Telephone, WhatsApp number, email, address, operating hours.
   - Social media links (Instagram, Facebook) and Google Maps embed URL.
 - **H. Appointment Rules & Schedule Settings**:
-  - Active weekly working days (Monday – Sunday toggles).
+  - Active weekly working days (Monday â€“ Sunday toggles).
   - Opening time, closing time, break start, and break end.
   - Slot interval minutes (30, 45, 60, 90 mins).
   - Max concurrent capacity per slot (suites available).
@@ -168,7 +167,7 @@ Accessible by clicking the **Lock icon** in the navbar or navigating to Admin mo
 
 ---
 
-## 🗄️ Database & Firebase Architecture
+## ðŸ—„ï¸ Database & Firebase Architecture
 
 ### Collections Structure
 - `services`: Published/unpublished treatments, pricing, duration, categories, and imagery.
@@ -176,18 +175,19 @@ Accessible by clicking the **Lock icon** in the navbar or navigating to Admin mo
 - `offers`: Coupon codes, percentage/fixed amounts, expiry dates, min spend, usage limits.
 - `bookings`: Complete booking records with unique IDs, customer info, date, time, pricing, status, and internal notes.
 - `gallery`: Portfolio photographs, titles, categories.
+- `experience`: Homepage experience cards managed by the administrator.
 - `settings`: Salon brand identity, contacts, announcements, Google Maps embed.
 - `settings/schedule`: Working days, hours, slot intervals, capacity, and blocked dates.
 - `admins`: Authorized administrator accounts.
 
-### Zero-Friction Setup & Dual Resilience
-1. **Live Firebase Mode**: Set environment variables in `.env` (`VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID`, etc.). The app will automatically connect to live Firestore, Firebase Auth, and Storage.
-2. **Instant Demo / Fallback Mode**: Even without Firebase credentials, the application is **100% fully functional** out of the box using persistent local storage emulation seeded with luxury demo content. All CRUD operations, bookings, slot conflicts, and coupon verifications work smoothly.
-3. **Security Rules**: Production-ready `firestore.rules` is included with strict role-based access rules.
+### Firebase Setup & Local Storage
+1. **Firebase mode**: Set the `VITE_FIREBASE_*` configuration values in `.env` to connect Firestore, Firebase Authentication, and Storage. Create the administrator's account with Firebase Authentication and authorize its UID as described above.
+2. **Local data mode**: Without Firebase configuration, salon content and bookings are stored in the current browser local storage and persist on that device. New content starts empty; it is not synchronized across devices.
+3. **Security rules**: Deploy `firestore.rules`. Bootstrap an admin by creating an `admins/{uid}` document in the Firebase console for the administrator's Firebase Auth UID, or use a custom `admin: true` claim.
 
 ---
 
-## 🚀 Setup & Development Commands
+## ðŸš€ Setup & Development Commands
 
 ### 1. Install Dependencies
 ```bash
@@ -215,7 +215,7 @@ firebase deploy
 
 ---
 
-## 🎨 Color Palette Reference
+## ðŸŽ¨ Color Palette Reference
 
 | Token | Color | Hex Code |
 |---|---|---|
@@ -224,4 +224,3 @@ firebase deploy
 | **French Gold** | Primary metallic accent | `#D4AF37` / `#B8860B` |
 | **Rose Gold** | Secondary blush accent | `#B76E79` / `#EDC9C5` |
 | **Espresso Brown** | Primary text & luxury dark | `#231713` / `#1A110D` |
-

@@ -48,7 +48,7 @@ export default function ParlourDoorIntro({ onComplete, forceShow = false }) {
 
   if (!showContent) return null;
 
-  const brandLetters = "L'ÉLIXIR".split('');
+  const brandLetters = "GLAMMORA".split('');
 
   return (
     <AnimatePresence>
@@ -137,7 +137,7 @@ export default function ParlourDoorIntro({ onComplete, forceShow = false }) {
                 transition={{ delay: 2.1, duration: 0.8 }}
                 className="mt-4 text-champagne-200/90 tracking-[0.25em] text-xs md:text-sm uppercase max-w-md font-light"
               >
-                Parisian Aesthetics • Private Suites • Swiss Botanicals
+                Beauty • Elegance • Confidence
               </motion.p>
             </div>
           </motion.div>
@@ -272,7 +272,7 @@ export default function ParlourDoorIntro({ onComplete, forceShow = false }) {
                 Your beauty experience begins here.
               </p>
               <p className="text-champagne-400/80 text-xs md:text-sm tracking-[0.25em] uppercase mb-8">
-                L'ÉLIXIR • Haute Beauté & Private Suites
+                GLAMMORA
               </p>
 
               {/* OPEN THE DOORS BUTTON */}
@@ -296,7 +296,7 @@ export default function ParlourDoorIntro({ onComplete, forceShow = false }) {
               </motion.button>
 
               <span className="mt-4 text-[11px] text-champagne-400/60 tracking-wider">
-                Click to unlock the private sanctuary
+                Click to unlock
               </span>
             </motion.div>
           )}

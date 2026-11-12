@@ -26,7 +26,7 @@ export default function ContactSection({ settings, onOpenBooking }) {
     }, 4000);
   };
 
-  const cleanPhone = (settings?.phone || '+18005893549').replace(/\D/g, '');
+  const cleanPhone = (settings?.whatsapp || settings?.phone || '').replace(/\D/g, '');
 
   return (
     <section id="contact" className="py-24 sm:py-32 bg-[#FAF7F2] relative">
@@ -58,6 +58,7 @@ export default function ContactSection({ settings, onOpenBooking }) {
             {/* Salon Details Card */}
             <div className="bg-white rounded-3xl p-8 border border-champagne-300 shadow-luxury space-y-6">
               
+              {settings?.address && (
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-full bg-champagne-200 flex items-center justify-center text-gold-deep flex-shrink-0">
                   <MapPin className="w-5 h-5" />
@@ -65,12 +66,14 @@ export default function ContactSection({ settings, onOpenBooking }) {
                 <div>
                   <h4 className="font-serif text-base font-semibold text-espresso-900">Atelier Location</h4>
                   <p className="text-xs sm:text-sm text-espresso-600 mt-1 leading-relaxed">
-                    {settings?.address || "742 Royale Boulevard, Haute District, Suite 400"}
+                    {settings.address}
                   </p>
-                  <p className="text-xs text-gold-deep mt-0.5">{settings?.city || "Beverly Hills / Paris"}</p>
+                  {settings.city && <p className="text-xs text-gold-deep mt-0.5">{settings.city}</p>}
                 </div>
               </div>
+              )}
 
+              {settings?.openingHours && (
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-full bg-champagne-200 flex items-center justify-center text-gold-deep flex-shrink-0">
                   <Clock className="w-5 h-5" />
@@ -78,37 +81,42 @@ export default function ContactSection({ settings, onOpenBooking }) {
                 <div>
                   <h4 className="font-serif text-base font-semibold text-espresso-900">Operating Hours</h4>
                   <p className="text-xs sm:text-sm text-espresso-600 mt-1">
-                    {settings?.openingHours || "Mon - Sat: 9:00 AM – 8:00 PM | Sun: 10:00 AM – 6:00 PM"}
+                    {settings.openingHours}
                   </p>
                   <span className="text-[11px] text-espresso-400 mt-0.5 block">
                     Private evening appointments upon concierge reservation.
                   </span>
                 </div>
               </div>
+              )}
 
+              {settings?.phone && (
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-full bg-champagne-200 flex items-center justify-center text-gold-deep flex-shrink-0">
                   <Phone className="w-5 h-5" />
                 </div>
                 <div>
                   <h4 className="font-serif text-base font-semibold text-espresso-900">Direct Telephone</h4>
-                  <a href={`tel:${settings?.phone || '+18005893549'}`} className="text-xs sm:text-sm text-espresso-800 font-medium hover:text-gold-deep transition-colors block mt-1">
-                    {settings?.phone || "+1 (800) 589-3549"}
+                  <a href={`tel:${settings.phone}`} className="text-xs sm:text-sm text-espresso-800 font-medium hover:text-gold-deep transition-colors block mt-1">
+                    {settings.phone}
                   </a>
                 </div>
               </div>
+              )}
 
               {/* Direct Buttons */}
               <div className="pt-2 flex flex-col sm:flex-row gap-3">
-                <a
-                  href={`https://wa.me/${cleanPhone}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex-1 py-3 px-4 rounded-full bg-[#25D366] text-white hover:brightness-105 transition-all text-xs uppercase tracking-wider font-semibold flex items-center justify-center gap-2 shadow-sm"
-                >
-                  <MessageCircle className="w-4 h-4 fill-white" />
-                  <span>WhatsApp Concierge</span>
-                </a>
+                {cleanPhone && (
+                  <a
+                    href={`https://wa.me/${cleanPhone}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex-1 py-3 px-4 rounded-full bg-[#25D366] text-white hover:brightness-105 transition-all text-xs uppercase tracking-wider font-semibold flex items-center justify-center gap-2 shadow-sm"
+                  >
+                    <MessageCircle className="w-4 h-4 fill-white" />
+                    <span>WhatsApp Concierge</span>
+                  </a>
+                )}
 
                 <button
                   onClick={() => onOpenBooking()}
@@ -178,9 +186,9 @@ export default function ContactSection({ settings, onOpenBooking }) {
           <div className="lg:col-span-7 flex flex-col rounded-3xl overflow-hidden border border-champagne-300 shadow-luxury bg-white min-h-[450px]">
             
             <div className="relative flex-1 w-full min-h-[380px] bg-champagne-200">
-              <iframe
+              {settings?.googleMapsEmbed ? <iframe
                 title="Salon Atelier Map"
-                src={settings?.googleMapsEmbed || "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2624.9916256937595!2d2.292292615674393!3d48.858370079287475!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47e66e2964e34e2d%3A0x8ddca9ee380ef7e0!2sEiffel%20Tower!5e0!3m2!1sen!2s!4v1620000000000!5m2!1sen!2s"}
+                src={settings.googleMapsEmbed}
                 width="100%"
                 height="100%"
                 style={{ border: 0, minHeight: '380px' }}
@@ -188,13 +196,17 @@ export default function ContactSection({ settings, onOpenBooking }) {
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
                 className="w-full h-full"
-              />
+              /> : (
+                <div className="w-full h-full min-h-[380px] flex items-center justify-center p-8 text-center text-espresso-500 text-sm">
+                  Add a map embed in website settings to show your location.
+                </div>
+              )}
             </div>
 
             <div className="p-6 bg-espresso-900 text-champagne-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <span className="text-gold uppercase tracking-widest text-[10px] font-semibold">Valet & Chauffeur Services</span>
-                <p className="text-xs text-champagne-300/80 mt-0.5">Complimentary valet parking available directly at our private rear porte-cochère.</p>
+                <span className="text-gold uppercase tracking-widest text-[10px] font-semibold">Visit GLAMMORA</span>
+                <p className="text-xs text-champagne-300/80 mt-0.5">We look forward to welcoming you.</p>
               </div>
               <a
                 href={settings?.instagramUrl || "#"}
@@ -203,7 +215,7 @@ export default function ContactSection({ settings, onOpenBooking }) {
                 className="inline-flex items-center gap-2 text-xs uppercase tracking-wider text-gold hover:text-white font-medium flex-shrink-0"
               >
                 <Instagram className="w-4 h-4" />
-                <span>Follow @lelixir.beaute</span>
+                <span>Follow us on Instagram</span>
               </a>
             </div>
 
@@ -215,4 +227,3 @@ export default function ContactSection({ settings, onOpenBooking }) {
     </section>
   );
 }
-
